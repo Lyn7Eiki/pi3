@@ -4,5 +4,8 @@
   "type": "module",
   "scripts": {
     "test": "node --test test/"
+  },
+  "devDependencies": {
+    "jsqr": "^1.4.0"
   }
 }
