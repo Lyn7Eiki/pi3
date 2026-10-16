@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>QR</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        margin: 2rem;
+      }
+      #container {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        width: max-content;
+      }
+      /* 静区靠这里的白底提供；SVG 本身不含背景色 */
+      #box {
+        background: #fff;
+        line-height: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="container">
+      <div id="box">qrcode</div>
+      <input placeholder="type the text" />
+      <button>Btn</button>
+    </div>
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>
