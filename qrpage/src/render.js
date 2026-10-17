@@ -23,13 +23,14 @@ export function layout({ size, matrix }, { cellSize = 8, quiet = 4 } = {}) {
 }
 
 /** 把几何序列化成 SVG 字符串。不含背景色，静区由页面 CSS 负责。 */
-export function toSvg({ width, height, rects }, { label = 'qrcode' } = {}) {
+export function toSvg({ width, height, rects }, { label = 'qrcode', attrs = '', extra = '' } = {}) {
   const squares = rects
     .map((r) => `<rect x="${r.x}" y="${r.y}" width="${r.size}" height="${r.size}"/>`)
     .join('');
   return (
     `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"` +
     ` viewBox="0 0 ${width} ${height}" role="img" aria-label="${label}"` +
-    ` shape-rendering="crispEdges">${squares}</svg>`
+    (attrs ? ` ${attrs}` : '') +
+    ` shape-rendering="crispEdges">${squares}${extra}</svg>`
   );
 }
