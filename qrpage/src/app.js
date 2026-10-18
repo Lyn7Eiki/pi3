@@ -10,7 +10,7 @@ export const MAX_CHARS = 27;
 
 /**
  * 把输入框、按钮、显示区接起来。
- * - 空文本：不改显示
+ * - 空文本：照常出码（内容为空的二维码，扫出来是空串）
  * - 超过 MAX_CHARS 个字符：打印日志，并显示一张"被破坏的二维码"，不给出可用的码
  * @param {{input: any, button: any, box: any}} dom
  * @param {{log?: (...args: any[]) => void}} [deps] 便于测试注入
@@ -19,7 +19,6 @@ export const MAX_CHARS = 27;
 export function bindApp({ input, button, box }, { log = console.log } = {}) {
   const render = () => {
     const text = input.value;
-    if (text === '') return;
 
     const chars = [...text].length; // 字母、数字、空格各算 1 个
     if (chars > MAX_CHARS) {

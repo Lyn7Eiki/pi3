@@ -48,15 +48,18 @@ test('C4a 输入文本 → 点 Btn → #box 的码扫出来就是该文本', () 
   }
 });
 
-test('C4b 空输入：点 Btn 不改动已有显示', () => {
+test('C4b 空输入：照常出码，解码得到空串', () => {
   const dom = stubDom();
   bindApp(dom);
   dom.input.value = 'hello';
   dom.button.click();
   const before = dom.box.innerHTML;
+
   dom.input.value = '';
   dom.button.click();
-  assert.equal(dom.box.innerHTML, before);
+  assert.notEqual(dom.box.innerHTML, before, '应换成空内容的码');
+  assert.match(dom.box.innerHTML, /<svg /);
+  assert.equal(decodeSvg(dom.box.innerHTML), '', '空内容码解码应为空串');
 });
 
 test('C4c 连续输入：后一次覆盖前一次', () => {
