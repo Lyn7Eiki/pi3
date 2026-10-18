@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import jsQR from 'jsqr';
+import { readBarcodes } from 'zxing-wasm/reader';
 import { bindApp, MAX_CHARS, EC_LEVEL } from '../src/app.js';
 import { brokenSvg, strokeLines } from '../src/broken.js';
 
@@ -13,8 +13,8 @@ function stubDom() {
   return { input: { value: '' }, button, box: { innerHTML: '' } };
 }
 
-/** 从 #box 的 SVG 字符串还原成像素再解码；解不出返回 null。 */
-function decodeSvg(svg) {
+/** 从 #box 的 SVG 字符串还原成像素，交给 zxing-wasm 解码；解不出返回 null。 */
+async function decodeSvg(svg) {
   const [, w, h] = svg.match(/viewBox="0 0 (\d+) (\d+)"/).map(Number);
   const data = new Uint8ClampedArray(w * h * 4).fill(255);
   for (const m of svg.matchAll(/<rect x="([\d.]+)" y="([\d.]+)" width="([\d.]+)" height="([\d.]+)"/g)) {
@@ -32,8 +32,8 @@ function decodeSvg(svg) {
       }
     }
   }
-  const res = jsQR(data, w, h);
-  return res ? res.data : null;
+  const [res] = await readBarcodes({ data, width: w, height: h }, { formats: ['QRCode'], tryHarder: true });
+  return res ? res.text : null;
 }
 
 function clickWith(text) {
@@ -50,35 +50,35 @@ test('C6a 常量：纠错固定 M、上限 27 字符', () => {
   assert.equal(MAX_CHARS, 27);
 });
 
-test('C6b 恰好 27 个字符：不打日志，出可用码', () => {
+test('C6b 恰好 27 个字符：不打日志，出可用码', async () => {
   const text = 'A'.repeat(27);
   const { dom, logs } = clickWith(text);
   assert.equal(logs.length, 0);
-  assert.equal(decodeSvg(dom.box.innerHTML), text);
+  assert.equal(await decodeSvg(dom.box.innerHTML), text);
 });
 
-test('C6c 28 个字符：打日志，出被破坏的码（扫不出来）', () => {
+test('C6c 28 个字符：打日志，出被破坏的码（扫不出来）', async () => {
   const { dom, logs } = clickWith('A'.repeat(28));
   assert.equal(logs.length, 1);
   assert.match(String(logs[0][0]), /超过 27 个字符/);
   assert.match(dom.box.innerHTML, /data-broken="true"/);
-  assert.equal(decodeSvg(dom.box.innerHTML), null, '破坏图必须解不出内容');
+  assert.equal(await decodeSvg(dom.box.innerHTML), null, '破坏图必须解不出内容');
 });
 
-test('C6d 空格也算 1 个字符：26 字母 + 1 空格 = 27 正常，再 +1 空格 = 28 破坏', () => {
+test('C6d 空格也算 1 个字符：26 字母 + 1 空格 = 27 正常，再 +1 空格 = 28 破坏', async () => {
   const ok = clickWith('A'.repeat(26) + ' ');
   assert.equal(ok.logs.length, 0);
-  assert.equal(decodeSvg(ok.dom.box.innerHTML), 'A'.repeat(26) + ' ');
+  assert.equal(await decodeSvg(ok.dom.box.innerHTML), 'A'.repeat(26) + ' ');
 
   const over = clickWith('A'.repeat(26) + '  ');
   assert.equal(over.logs.length, 1);
   assert.match(over.dom.box.innerHTML, /data-broken="true"/);
 });
 
-test('C6e 汉字同样按字符计：27 正常，28 破坏', () => {
+test('C6e 汉字同样按字符计：27 正常，28 破坏', async () => {
   const ok = clickWith('好'.repeat(27));
   assert.equal(ok.logs.length, 0);
-  assert.equal(decodeSvg(ok.dom.box.innerHTML), '好'.repeat(27));
+  assert.equal(await decodeSvg(ok.dom.box.innerHTML), '好'.repeat(27));
 
   const over = clickWith('好'.repeat(28));
   assert.equal(over.logs.length, 1);

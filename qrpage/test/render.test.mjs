@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import jsQR from 'jsqr';
+import { readBarcodes } from 'zxing-wasm/reader';
 import { encode } from '../src/qr.js';
 import { layout, toSvg } from '../src/render.js';
 
@@ -65,10 +65,10 @@ test('C3c 所有码显示尺寸与位置恒定：黑块恒 232px、静区恒 32p
   assert.equal((toSvg(layout(qr)).match(/<rect/g) || []).length, countDark(qr));
 });
 
-test('C3d 端到端：按渲染几何光栅化后 jsQR 解出原文本', () => {
+test('C3d 端到端：按渲染几何光栅化后 zxing-wasm 解出原文本', async () => {
   const text = '你好，世界';
   const img = rasterFromRects(layout(encode(text)));
-  const res = jsQR(img.data, img.width, img.height);
-  assert.ok(res, 'jsQR 解不出任何内容');
-  assert.equal(res.data, text);
+  const [res] = await readBarcodes(img, { formats: ['QRCode'], tryHarder: true });
+  assert.ok(res, 'zxing-wasm 解不出任何内容');
+  assert.equal(res.text, text);
 });

@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import jsQR from 'jsqr';
+import jsQR from 'jsqr'; // 只用于空 payload，见 C4b
+import { readBarcodes } from 'zxing-wasm/reader';
 import { bindApp } from '../src/app.js';
 
 /** 极简 DOM 替身：只需要 value / addEventListener / innerHTML 三样。 */
@@ -14,8 +15,8 @@ function stubDom() {
   return { input: { value: '' }, button, box: { innerHTML: '' } };
 }
 
-/** 把 #box 里的 SVG 字符串还原成像素再解码——验的是"真的渲染出来的东西"。 */
-function decodeSvg(svg) {
+/** 把 #box 里的 SVG 字符串还原成像素——验的是"真的渲染出来的东西"。 */
+function toPixels(svg) {
   const [, w, h] = svg.match(/viewBox="0 0 (\d+) (\d+)"/).map(Number);
   const data = new Uint8ClampedArray(w * h * 4).fill(255);
   for (const m of svg.matchAll(/<rect x="([\d.]+)" y="([\d.]+)" width="([\d.]+)" height="([\d.]+)"/g)) {
@@ -33,18 +34,30 @@ function decodeSvg(svg) {
       }
     }
   }
-  const res = jsQR(data, w, h);
+  return { data, width: w, height: h };
+}
+
+/** 独立解码器 zxing-wasm；解不出返回 null。 */
+async function decodeSvg(svg) {
+  const [res] = await readBarcodes(toPixels(svg), { formats: ['QRCode'], tryHarder: true });
+  return res ? res.text : null;
+}
+
+/** zxing-wasm 不返回空 payload，空内容的码只能交给 jsQR 判。 */
+function decodeSvgWithJsQr(svg) {
+  const img = toPixels(svg);
+  const res = jsQR(img.data, img.width, img.height);
   return res ? res.data : null;
 }
 
-test('C4a 输入文本 → 点 Btn → #box 的码扫出来就是该文本', () => {
+test('C4a 输入文本 → 点 Btn → #box 的码扫出来就是该文本', async () => {
   const dom = stubDom();
   bindApp(dom);
   for (const text of ['hello', '你好，世界', 'https://example.com/a?b=1']) {
     dom.input.value = text;
     dom.box.innerHTML = '';
     dom.button.click();
-    assert.equal(decodeSvg(dom.box.innerHTML), text, `失败于：${text}`);
+    assert.equal(await decodeSvg(dom.box.innerHTML), text, `失败于：${text}`);
   }
 });
 
@@ -59,10 +72,10 @@ test('C4b 空输入：照常出码，解码得到空串', () => {
   dom.button.click();
   assert.notEqual(dom.box.innerHTML, before, '应换成空内容的码');
   assert.match(dom.box.innerHTML, /<svg /);
-  assert.equal(decodeSvg(dom.box.innerHTML), '', '空内容码解码应为空串');
+  assert.equal(decodeSvgWithJsQr(dom.box.innerHTML), '', '空内容码解码应为空串');
 });
 
-test('C4c 连续输入：后一次覆盖前一次', () => {
+test('C4c 连续输入：后一次覆盖前一次', async () => {
   const dom = stubDom();
   bindApp(dom);
   dom.input.value = 'first';
@@ -71,7 +84,7 @@ test('C4c 连续输入：后一次覆盖前一次', () => {
   dom.input.value = 'second';
   dom.button.click();
   assert.notEqual(dom.box.innerHTML, first);
-  assert.equal(decodeSvg(dom.box.innerHTML), 'second');
+  assert.equal(await decodeSvg(dom.box.innerHTML), 'second');
 });
 
 test('C4d index.html 保留了约定的结构', () => {
