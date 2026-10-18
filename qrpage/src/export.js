@@ -38,3 +38,8 @@ export function downloadBlob(blob, filename) {
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 0);
 }
+
+/** 把 PNG Blob 写进剪贴板（需要安全上下文：https 或 localhost）。 */
+export async function copyBlob(blob) {
+  await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+}

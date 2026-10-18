@@ -1,7 +1,7 @@
 import { encode } from './qr.js';
 import { layout, toSvg } from './render.js';
 import { brokenSvg } from './broken.js';
-import { svgToPngBlob, downloadBlob } from './export.js';
+import { svgToPngBlob, downloadBlob, copyBlob } from './export.js';
 
 /** 纠错级别固定为 M，不随内容自动变化。 */
 export const EC_LEVEL = 'M';
@@ -18,8 +18,13 @@ export const MAX_CHARS = 27;
  * @returns {() => void} 手动触发一次渲染
  */
 export function bindApp(
-  { input, button, box, exportBtn },
-  { log = console.log, toBlob = svgToPngBlob, download = downloadBlob } = {},
+  { input, button, box, exportBtn, copyBtn },
+  {
+    log = console.log,
+    toBlob = svgToPngBlob,
+    download = downloadBlob,
+    copy = copyBlob,
+  } = {},
 ) {
   let lastSvg = '';
 
@@ -45,6 +50,18 @@ export function bindApp(
       if (!lastSvg) return;
       const blob = await toBlob(lastSvg);
       download(blob, 'qrcode.png');
+    });
+  }
+
+  if (copyBtn) {
+    copyBtn.addEventListener('click', async () => {
+      if (!lastSvg) return;
+      try {
+        await copy(await toBlob(lastSvg));
+      } catch (e) {
+        // 剪贴板可能被浏览器或权限拒绝，别让它变成未捕获异常
+        log('复制图片失败：', e);
+      }
     });
   }
 

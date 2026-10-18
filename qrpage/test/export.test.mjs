@@ -5,19 +5,21 @@ import { bindApp } from '../src/app.js';
 function stubDom() {
   const button = { addEventListener(t, fn) { if (t === 'click') this.click = fn; } };
   const exportBtn = { addEventListener(t, fn) { if (t === 'click') this.click = fn; } };
-  return { input: { value: '' }, button, box: { innerHTML: '' }, exportBtn };
+  const copyBtn = { addEventListener(t, fn) { if (t === 'click') this.click = fn; } };
+  return { input: { value: '' }, button, box: { innerHTML: '' }, exportBtn, copyBtn };
 }
 
 function setup() {
   const dom = stubDom();
-  const calls = { toBlob: [], download: [] };
+  const calls = { toBlob: [], download: [], copy: [], logs: [] };
   bindApp(dom, {
-    log: () => {},
+    log: (...args) => calls.logs.push(args),
     toBlob: async (svg) => {
       calls.toBlob.push(svg);
       return { fake: 'blob', svg };
     },
     download: (blob, name) => calls.download.push({ blob, name }),
+    copy: async (blob) => calls.copy.push(blob),
   });
   return { dom, calls };
 }
@@ -55,4 +57,35 @@ test('C8c 超长文本导出的是破坏图（带 data-broken）', async () => {
 
   assert.match(calls.toBlob[0], /data-broken="true"/, '导出的应是破坏图');
   assert.equal(calls.download[0].name, 'qrcode.png');
+});
+
+test('C8d 复制：把当前显示的图写进剪贴板', async () => {
+  const { dom, calls } = setup();
+  dom.input.value = 'hello';
+  dom.button.click();
+  await dom.copyBtn.click();
+
+  assert.equal(calls.toBlob.length, 1);
+  assert.equal(calls.copy.length, 1, '应写一次剪贴板');
+  assert.equal(calls.copy[0].svg, calls.toBlob[0], '复制的是同一张');
+  assert.equal(calls.download.length, 0, '复制不该触发下载');
+});
+
+test('C8e 剪贴板被拒绝时只打日志，不抛未捕获异常', async () => {
+  const dom = stubDom();
+  const logs = [];
+  bindApp(dom, {
+    log: (...args) => logs.push(args),
+    toBlob: async (svg) => ({ fake: 'blob', svg }),
+    copy: async () => {
+      throw new Error('NotAllowedError');
+    },
+  });
+  dom.input.value = 'hello';
+  dom.button.click();
+  await dom.copyBtn.click();
+
+  assert.equal(logs.length, 1);
+  assert.match(String(logs[0][0]), /复制图片失败/);
+  assert.match(String(logs[0][1]), /NotAllowedError/);
 });
