@@ -41,12 +41,28 @@ test('C3b 静区：所有方块都在四周 4 格留白之内', () => {
   }
 });
 
-test('C3c SVG 字符串：rect 数量与 viewBox 正确', () => {
+test('C3c 所有码显示尺寸与位置恒定：黑块恒 232px、静区恒 32px', () => {
+  for (const text of ['1', 'hello', '1234567890123456789012345', '123456789012345678901234567']) {
+    const qr = encode(text);
+    const svg = toSvg(layout(qr));
+
+    assert.match(svg, /width="296" height="296"/, `${text} 的显示边长`);
+    assert.match(svg, /viewBox="0 0 296 296"/, `${text} 的坐标系`);
+
+    const rects = [...svg.matchAll(/<rect x="([\d.]+)" y="([\d.]+)" width="([\d.]+)"/g)].map(
+      (m) => m.slice(1).map(Number),
+    );
+    const minX = Math.min(...rects.map((r) => r[0]));
+    const minY = Math.min(...rects.map((r) => r[1]));
+    assert.ok(Math.abs(minX - 32) < 0.01, `${text} 左上角 x=${minX}，应恒为 32`);
+    assert.ok(Math.abs(minY - 32) < 0.01, `${text} 左上角 y=${minY}，应恒为 32`);
+
+    const modulePx = rects[0][2];
+    assert.ok(Math.abs(modulePx * qr.size - 232) < 0.2, `${text} 黑块 ${modulePx * qr.size}px`);
+  }
+
   const qr = encode('hello');
-  const svg = toSvg(layout(qr));
-  assert.equal((svg.match(/<rect/g) || []).length, countDark(qr));
-  assert.match(svg, /viewBox="0 0 232 232"/);
-  assert.match(svg, /<svg [^>]*width="232" height="232"/);
+  assert.equal((toSvg(layout(qr)).match(/<rect/g) || []).length, countDark(qr));
 });
 
 test('C3d 端到端：按渲染几何光栅化后 jsQR 解出原文本', () => {

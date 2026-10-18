@@ -1,4 +1,4 @@
-import { layout, toSvg } from './render.js';
+import { layout, projector, toSvg } from './render.js';
 
 /** 与 27 字符的 v3 码同尺寸，看起来更像"本来的那张码"。 */
 const SIZE = 29;
@@ -80,20 +80,22 @@ export function strokeLines(size = SIZE) {
 /** 被破坏的二维码 SVG：骨架 + 粗黑笔触，带 data-broken 标记。 */
 export function brokenSvg({ size = SIZE, seed = SEED } = {}) {
   const geometry = layout(brokenMatrix({ size, seed }), { cellSize: CELL_SIZE, quiet: QUIET });
+  const p = projector(geometry);
 
   const lines = strokeLines(size)
-    .map(
-      ([[x1, y1], [x2, y2]]) =>
-        `<line x1="${((x1 + QUIET) * CELL_SIZE).toFixed(1)}"` +
-        ` y1="${((y1 + QUIET) * CELL_SIZE).toFixed(1)}"` +
-        ` x2="${((x2 + QUIET) * CELL_SIZE).toFixed(1)}"` +
-        ` y2="${((y2 + QUIET) * CELL_SIZE).toFixed(1)}"/>`,
-    )
+    .map(([[x1, y1], [x2, y2]]) => {
+      const [ax, ay] = p.point(x1, y1);
+      const [bx, by] = p.point(x2, y2);
+      return (
+        `<line x1="${ax.toFixed(1)}" y1="${ay.toFixed(1)}"` +
+        ` x2="${bx.toFixed(1)}" y2="${by.toFixed(1)}"/>`
+      );
+    })
     .join('');
 
   const extra =
     `<g fill="none" stroke="${STROKE_COLOR}" stroke-linecap="round"` +
-    ` stroke-width="${STROKE_WIDTH * CELL_SIZE}">${lines}</g>`;
+    ` stroke-width="${(STROKE_WIDTH * p.modulePx).toFixed(1)}">${lines}</g>`;
 
   return toSvg(geometry, { label: 'broken qrcode', attrs: 'data-broken="true"', extra });
 }

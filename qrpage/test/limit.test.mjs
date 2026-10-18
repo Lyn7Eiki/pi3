@@ -15,13 +15,15 @@ function stubDom() {
 
 /** 从 #box 的 SVG 字符串还原成像素再解码；解不出返回 null。 */
 function decodeSvg(svg) {
-  const w = Number(svg.match(/width="(\d+)"/)[1]);
-  const h = Number(svg.match(/height="(\d+)"/)[1]);
+  const [, w, h] = svg.match(/viewBox="0 0 (\d+) (\d+)"/).map(Number);
   const data = new Uint8ClampedArray(w * h * 4).fill(255);
-  for (const m of svg.matchAll(/<rect x="(\d+)" y="(\d+)" width="(\d+)" height="(\d+)"/g)) {
+  for (const m of svg.matchAll(/<rect x="([\d.]+)" y="([\d.]+)" width="([\d.]+)" height="([\d.]+)"/g)) {
     const [x, y, rw, rh] = m.slice(1).map(Number);
-    for (let yy = y; yy < y + rh; yy += 1) {
-      for (let xx = x; xx < x + rw; xx += 1) {
+    // 坐标可能带小数：按"像素中心是否落在格内"填色，避免格间漏掉一列像素
+    for (let yy = Math.floor(y); yy < Math.ceil(y + rh); yy += 1) {
+      if (yy + 0.5 < y || yy + 0.5 >= y + rh) continue;
+      for (let xx = Math.floor(x); xx < Math.ceil(x + rw); xx += 1) {
+        if (xx + 0.5 < x || xx + 0.5 >= x + rw) continue;
         const i = (yy * w + xx) * 4;
         data[i] = 0;
         data[i + 1] = 0;
