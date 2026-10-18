@@ -79,5 +79,5 @@ test('C4d index.html 保留了约定的结构', () => {
   assert.match(html, /<div id="container">/);
   assert.match(html, /<div id="box">/);
   assert.match(html, /<input placeholder="type the text"/);
-  assert.match(html, /<button>/);
+  assert.match(html, /<button id="render">Btn<\/button>/);
 });

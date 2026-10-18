@@ -9,6 +9,9 @@ export const EC_LEVEL = 'M';
 /** 业务约定的字符数上限：超过就打印日志提示。 */
 export const MAX_CHARS = 27;
 
+/** 可切换的码制。Data Matrix 还没实现，切换只影响按钮文案。 */
+export const MODES = ['QR', 'DM'];
+
 /**
  * 把输入框、按钮、显示区接起来。
  * - 空文本：照常出码（内容为空的二维码，扫出来是空串）
@@ -18,7 +21,7 @@ export const MAX_CHARS = 27;
  * @returns {() => void} 手动触发一次渲染
  */
 export function bindApp(
-  { input, button, box, textEl, exportBtn, copyBtn },
+  { input, button, box, textEl, modeBtns, exportBtn, copyBtn },
   {
     log = console.log,
     toBlob = svgToPngBlob,
@@ -27,6 +30,7 @@ export function bindApp(
   } = {},
 ) {
   let lastSvg = '';
+  let mode = 0;
 
   const render = () => {
     const text = input.value;
@@ -46,6 +50,20 @@ export function bindApp(
   };
 
   button.addEventListener('click', render);
+
+  if (modeBtns && modeBtns.length) {
+    const applyMode = () => {
+      modeBtns.forEach((btn, i) => btn.setAttribute('aria-pressed', String(i === mode)));
+    };
+    modeBtns.forEach((btn, i) => {
+      btn.addEventListener('click', () => {
+        mode = i;
+        applyMode();
+        // TODO: Data Matrix 的生成尚未实现，切换后仍按 QR 渲染
+      });
+    });
+    applyMode();
+  }
 
   if (exportBtn) {
     exportBtn.addEventListener('click', async () => {
