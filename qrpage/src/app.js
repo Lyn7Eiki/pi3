@@ -18,7 +18,7 @@ export const MAX_CHARS = 27;
  * @returns {() => void} 手动触发一次渲染
  */
 export function bindApp(
-  { input, button, box, exportBtn, copyBtn },
+  { input, button, box, textEl, exportBtn, copyBtn },
   {
     log = console.log,
     toBlob = svgToPngBlob,
@@ -36,11 +36,13 @@ export function bindApp(
       log(`文本超过 ${MAX_CHARS} 个字符（当前 ${chars} 个）`);
       lastSvg = brokenSvg();
       box.innerHTML = lastSvg;
+      if (textEl) textEl.textContent = `"${text}"`;
       return;
     }
 
     lastSvg = toSvg(layout(encode(text, { ecLevel: EC_LEVEL })));
     box.innerHTML = lastSvg;
+    if (textEl) textEl.textContent = `"${text}"`;
   };
 
   button.addEventListener('click', render);

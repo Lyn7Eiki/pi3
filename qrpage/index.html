@@ -20,11 +20,28 @@
         background: #fff;
         line-height: 0;
       }
+      /* 码下面的原文：与码同宽、居中，长了自动换行 */
+      #text {
+        width: 296px;
+        /* 码的静区 32px + 容器 gap 16px 会把文字推远，这里抵掉大部分 */
+        margin-top: -2.5rem;
+        /* 固定两行高度：内容长短不再顶动下面的输入框与按钮 */
+        height: 2.4em;
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        color: #555;
+        font-size: 0.95rem;
+        text-align: center;
+        word-break: break-all;
+      }
     </style>
   </head>
   <body>
     <div id="container">
       <div id="box">qrcode</div>
+      <div id="text"></div>
       <input placeholder="type the text" />
       <button>Btn</button>
       <button id="export">导出图片</button>
