@@ -100,6 +100,14 @@
       <button id="export">导出图片</button>
       <button id="copy">复制图片</button>
     </div>
+    <!-- 页面里写裸模块名 'bwip-js'，由 importmap 指到 npm 装的浏览器构建 -->
+    <script type="importmap">
+      {
+        "imports": {
+          "bwip-js": "/node_modules/bwip-js/dist/bwip-js.mjs"
+        }
+      }
+    </script>
     <script type="module" src="./src/main.js"></script>
   </body>
 </html>

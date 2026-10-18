@@ -56,3 +56,9 @@ test('C2e URL 往返', () => {
   const s = 'https://example.com/a?b=1&c=2';
   assert.equal(roundTrip(s), s);
 });
+
+test('C2f 空串走 qrcode-generator 兜底，扫出来仍是空串', () => {
+  const encoded = encode('');
+  assert.ok(encoded.size >= 21);
+  assert.equal(roundTrip(''), '');
+});
