@@ -6,6 +6,9 @@ npm install
 npm test  
 npm run serve     # http://localhost:1234/
 
+npm run app          # 开发：直接开窗口  
+npm run app:build    # 打包 → dist/QRPage-darwin-arm64/QRPage.app
+
 ## 用到的库
 
 编码与解码分开选型：编码负责出图，解码只在测试里当**独立裁判**，避免自己验自己。
