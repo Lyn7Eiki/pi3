@@ -17,8 +17,9 @@ const MIME = {
 /**
  * 起一个静态服务。
  * 关键点是 Cache-Control: no-store —— 改完代码刷新就生效，不用硬刷新。
+ * host 传 '127.0.0.1' 可以只监听本机（Electron 里就这么用），port 传 0 则随机分配。
  */
-export function startServer({ root = process.cwd(), port = 1234 } = {}) {
+export function startServer({ root = process.cwd(), port = 1234, host } = {}) {
   const rootDir = resolve(root);
 
   const server = createServer((req, res) => {
@@ -54,7 +55,7 @@ export function startServer({ root = process.cwd(), port = 1234 } = {}) {
     createReadStream(file).pipe(res);
   });
 
-  return new Promise((done) => server.listen(port, () => done(server)));
+  return new Promise((done) => server.listen(port, host, () => done(server)));
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
