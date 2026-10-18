@@ -26,6 +26,9 @@
       #modes {
         flex: none;
         display: flex;
+        /* 左移 40px：探进码框右侧约 28px，距黑区只剩 4px。
+           上限是 gap 12px + 静区 32px = 44px，再往左就压到模块上了 */
+        margin-left: -2.5rem;
       }
       #modes button {
         /* 固定宽度：选中态变化不会改变整体布局宽度 */
