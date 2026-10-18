@@ -1,3 +1,4 @@
 ~$*
 node_modules/
 qrpage/dist/
+.DS_Store
