@@ -1,4 +1,4 @@
-import { encode } from './qr.js';
+import { encode } from './encode.js';
 import { layout, toSvg } from './render.js';
 import { brokenSvg } from './broken.js';
 import { svgToPngBlob, downloadBlob, copyBlob } from './export.js';
@@ -9,12 +9,18 @@ export const EC_LEVEL = 'M';
 /** 业务约定的字符数上限：超过就打印日志提示。 */
 export const MAX_CHARS = 27;
 
-/** 可切换的码制。Data Matrix 还没实现，切换只影响按钮文案。 */
-export const MODES = ['QR', 'DM'];
+/** 提示文案出错时的颜色：红。 */
+export const NOTE_ERROR_COLOR = '#dc2626';
+
+/** 可切换的码制：label 是按钮文案，symbology 交给 encode()。 */
+export const MODES = [
+  { label: 'QR', symbology: 'qr' },
+  { label: 'DM', symbology: 'dm' },
+];
 
 /**
  * 把输入框、按钮、显示区接起来。
- * - 空文本：照常出码（内容为空的二维码，扫出来是空串）
+ * - 空文本：QR 照常出码（内容为空，扫出来是空串）；DM 表示不了空内容，直接不出码
  * - 超过 MAX_CHARS 个字符：打印日志，并显示一张"被破坏的二维码"，不给出可用的码
  * @param {{input: any, button: any, box: any}} dom
  * @param {{log?: (...args: any[]) => void}} [deps] 便于测试注入
@@ -32,21 +38,40 @@ export function bindApp(
   let lastSvg = '';
   let mode = 0;
 
+  /** 码下面那行原文：出错时换成红字提示。 */
+  const setNote = (text, { error = false } = {}) => {
+    if (!textEl) return;
+    textEl.textContent = text;
+    if (textEl.style) textEl.style.color = error ? NOTE_ERROR_COLOR : '';
+  };
+
   const render = () => {
     const text = input.value;
+    const symbology = MODES[mode].symbology;
 
     const chars = [...text].length; // 字母、数字、空格各算 1 个
     if (chars > MAX_CHARS) {
       log(`文本超过 ${MAX_CHARS} 个字符（当前 ${chars} 个）`);
-      lastSvg = brokenSvg();
+      lastSvg = brokenSvg({ symbology });
       box.innerHTML = lastSvg;
-      if (textEl) textEl.textContent = `"${text}"`;
+      setNote(`"${text}"`);
       return;
     }
 
-    lastSvg = toSvg(layout(encode(text, { ecLevel: EC_LEVEL })));
+    // Data Matrix 表示不了空内容：给一张 DM 形状的破坏图，并用红字说明
+    if (text === '' && symbology === 'dm') {
+      log('Data Matrix 不支持空串');
+      lastSvg = brokenSvg({ symbology: 'dm' });
+      box.innerHTML = lastSvg;
+      setNote('不支持空串', { error: true });
+      return;
+    }
+
+    lastSvg = toSvg(layout(encode(text, { symbology, ecLevel: EC_LEVEL })), {
+      label: symbology === 'dm' ? 'data matrix' : 'qrcode',
+    });
     box.innerHTML = lastSvg;
-    if (textEl) textEl.textContent = `"${text}"`;
+    setNote(`"${text}"`);
   };
 
   button.addEventListener('click', render);
@@ -59,7 +84,7 @@ export function bindApp(
       btn.addEventListener('click', () => {
         mode = i;
         applyMode();
-        // TODO: Data Matrix 的生成尚未实现，切换后仍按 QR 渲染
+        render(); // 换码制要立刻重画
       });
     });
     applyMode();

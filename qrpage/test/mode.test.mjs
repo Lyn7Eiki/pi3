@@ -34,7 +34,8 @@ function setup() {
 const pressed = (dom) => dom.modeBtns.map((b) => b.getAttribute('aria-pressed'));
 
 test('C10a 两个按钮，默认选中 QR', () => {
-  assert.deepEqual(MODES, ['QR', 'DM']);
+  assert.deepEqual(MODES.map((m) => m.label), ['QR', 'DM']);
+  assert.deepEqual(MODES.map((m) => m.symbology), ['qr', 'dm']);
   assert.deepEqual(pressed(setup()), ['true', 'false']);
 });
 
@@ -47,14 +48,14 @@ test('C10b 点 DM 选中它，再点 QR 换回来', () => {
   assert.deepEqual(pressed(dom), ['true', 'false']);
 });
 
-test('C10c 切换暂不改变生成的码（Data Matrix 未实现）', () => {
+test('C10c 切换码制会立刻重画', () => {
   const dom = setup();
   dom.input.value = 'hello';
   dom.button.click();
   const before = dom.box.innerHTML;
 
   dom.modeBtns[1].click();
-  assert.equal(dom.box.innerHTML, before, '现在仍按 QR 渲染');
+  assert.notEqual(dom.box.innerHTML, before, '选 DM 后应换成 Data Matrix');
 });
 
 test('C10d index.html 里是两个并列按钮，文案正确', () => {

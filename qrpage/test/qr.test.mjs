@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { encode } from '../src/qr.js';
+import { encode } from '../src/encode.js';
 
 /** 7x7 定位图案：外框黑、内圈白、中心 3x3 黑。返回第一个不符的坐标，全符返回 null。 */
 function finderMismatch(matrix, top, left) {

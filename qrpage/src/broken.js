@@ -2,6 +2,8 @@ import { layout, projector, toSvg } from './render.js';
 
 /** 与 27 字符的 v3 码同尺寸，看起来更像"本来的那张码"。 */
 const SIZE = 29;
+/** Data Matrix 的尺寸必须是偶数，取个接近的。 */
+export const DM_SIZE = 26;
 const CELL_SIZE = 8;
 const QUIET = 4;
 const SEED = 20241016;
@@ -77,12 +79,37 @@ export function strokeLines(size = SIZE) {
   ];
 }
 
-/** 被破坏的二维码 SVG：骨架 + 粗黑笔触，带 data-broken 标记。 */
-export function brokenSvg({ size = SIZE, seed = SEED } = {}) {
-  const geometry = layout(brokenMatrix({ size, seed }), { cellSize: CELL_SIZE, quiet: QUIET });
+/**
+ * 一张"看着像 Data Matrix、其实扫不出来"的矩阵：
+ * 左边和下边是实线（L 形定位），上边和右边是交替的时序点，其余随机。
+ */
+export function brokenDmMatrix({ size = DM_SIZE, seed = SEED } = {}) {
+  const rand = lcg(seed);
+  const matrix = Array.from({ length: size }, () =>
+    Array.from({ length: size }, () => rand() < 0.5),
+  );
+
+  for (let i = 0; i < size; i += 1) {
+    matrix[0][i] = i % 2 === 0; // 顶边时序
+    matrix[i][size - 1] = i % 2 === 1; // 右边时序
+  }
+  for (let i = 0; i < size; i += 1) {
+    matrix[i][0] = true; // 左边实线
+    matrix[size - 1][i] = true; // 底边实线
+  }
+  return { size, matrix };
+}
+
+/** 被破坏的码 SVG：骨架 + 粗黑笔触，带 data-broken 标记。 */
+export function brokenSvg({ size, seed = SEED, symbology = 'qr' } = {}) {
+  const isDm = symbology === 'dm';
+  const broken = isDm
+    ? brokenDmMatrix({ size: size ?? DM_SIZE, seed })
+    : brokenMatrix({ size: size ?? SIZE, seed });
+  const geometry = layout(broken, { cellSize: CELL_SIZE, quiet: QUIET });
   const p = projector(geometry);
 
-  const lines = strokeLines(size)
+  const lines = strokeLines(broken.size)
     .map(([[x1, y1], [x2, y2]]) => {
       const [ax, ay] = p.point(x1, y1);
       const [bx, by] = p.point(x2, y2);
@@ -97,5 +124,9 @@ export function brokenSvg({ size = SIZE, seed = SEED } = {}) {
     `<g fill="none" stroke="${STROKE_COLOR}" stroke-linecap="round"` +
     ` stroke-width="${(STROKE_WIDTH * p.modulePx).toFixed(1)}">${lines}</g>`;
 
-  return toSvg(geometry, { label: 'broken qrcode', attrs: 'data-broken="true"', extra });
+  return toSvg(geometry, {
+    label: isDm ? 'broken data matrix' : 'broken qrcode',
+    attrs: `data-broken="true" data-symbology="${symbology}"`,
+    extra,
+  });
 }

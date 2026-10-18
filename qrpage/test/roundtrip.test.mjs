@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import jsQR from 'jsqr'; // 只用于空 payload，见 C2f
 import { readBarcodes } from 'zxing-wasm/reader';
-import { encode } from '../src/qr.js';
+import { encode } from '../src/encode.js';
 
 const SCALE = 8; // 每个模块 8 像素，解码器对过小的码识别不稳
 const QUIET = 4; // 静区 4 模块，规范要求

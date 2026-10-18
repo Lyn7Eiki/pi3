@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readBarcodes } from 'zxing-wasm/reader';
-import { encode } from '../src/qr.js';
+import { encode } from '../src/encode.js';
 import { layout, toSvg } from '../src/render.js';
 
 const countDark = ({ matrix }) => matrix.flat().filter(Boolean).length;

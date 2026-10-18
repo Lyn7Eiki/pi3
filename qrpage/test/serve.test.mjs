@@ -17,7 +17,7 @@ async function withServer(fn) {
 
 test('C7a 所有响应都带 Cache-Control: no-store', async () => {
   await withServer(async (base) => {
-    for (const path of ['/index.html', '/src/app.js', '/src/qr.js']) {
+    for (const path of ['/index.html', '/src/app.js', '/src/encode.js']) {
       const res = await fetch(base + path);
       assert.equal(res.status, 200, path);
       assert.match(res.headers.get('cache-control') ?? '', /no-store/, path);
