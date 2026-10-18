@@ -3,7 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test test/"
+    "test": "node --test test/",
+    "serve": "node serve.mjs"
   },
   "devDependencies": {
     "jsqr": "^1.4.0"
