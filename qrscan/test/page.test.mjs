@@ -29,7 +29,7 @@ test('P1 中文界面与关键区域都在', () => {
 });
 
 test('P2 解码引擎走本地 node_modules，不依赖外网 CDN', () => {
-  assert.match(html, /"zxing-wasm\/reader": "\/node_modules\/zxing-wasm\/dist\/es\/reader\/index\.js"/);
+  assert.match(html, /"zxing-wasm\/reader": "\.\/node_modules\/zxing-wasm\/dist\/es\/reader\/index\.js"/);
   assert.doesNotMatch(html, /jsdelivr|unpkg|cdn\./i);
 });
 
