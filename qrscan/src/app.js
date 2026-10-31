@@ -2,6 +2,7 @@ import { decodeImageData, summarize } from './decode.js';
 import { loadImageFile } from './image.js';
 import { accentFor, overlayMarkup } from './overlay.js';
 import { copyText } from './clipboard.js';
+import { mapCameraError, startCameraScan } from './camera.js';
 
 const ICONS = {
   copy: '<svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="7" y="7" width="9" height="9" rx="2"/><path d="M13 7V5.5A1.5 1.5 0 0 0 11.5 4h-6A1.5 1.5 0 0 0 4 5.5v6A1.5 1.5 0 0 0 5.5 13H7"/></svg>',
@@ -99,6 +100,8 @@ export function bindApp(dom, deps = {}) {
     copy = copyText,
     log = console.error,
     warmup = true,
+    startCamera = startCameraScan,
+    cameraError = mapCameraError,
   } = deps;
 
   const state = {
@@ -110,6 +113,9 @@ export function bindApp(dom, deps = {}) {
 
   let toastTimer;
   let dragDepth = 0;
+  let cameraAbort = null;
+  let cameraSession = null;
+  let cameraCloseTimer = null;
 
   const notify = (message) => {
     if (!dom.toast) return;
@@ -284,7 +290,8 @@ export function bindApp(dom, deps = {}) {
       dom.resultCount.hidden = false;
     }
     if (dom.resultsHint) {
-      dom.resultsHint.textContent = `${items.length} 个码 · ${elapsedMs} ms`;
+      const timing = elapsedMs > 0 ? ` · ${elapsedMs} ms` : '';
+      dom.resultsHint.textContent = `${items.length} 个码${timing}`;
     }
     items.forEach((item, index) => dom.resultItems?.append(createResultCard(item, index)));
   };
@@ -362,6 +369,117 @@ export function bindApp(dom, deps = {}) {
     } finally {
       if (token === state.token) setBusy(false);
     }
+  };
+
+  const setCameraStatus = (text, error = false) => {
+    if (!dom.cameraStatus) return;
+    dom.cameraStatus.textContent = text;
+    dom.cameraStatus.classList.toggle('is-error', error);
+  };
+
+  const stopCamera = () => {
+    clearTimeout(cameraCloseTimer);
+    cameraCloseTimer = null;
+    cameraAbort?.abort();
+    cameraAbort = null;
+    cameraSession?.stop();
+    cameraSession = null;
+    dom.cameraVideo?.pause?.();
+    if (dom.cameraVideo) dom.cameraVideo.srcObject = null;
+  };
+
+  const closeCamera = () => {
+    stopCamera();
+    if (dom.cameraDialog?.open) dom.cameraDialog.close();
+    dom.cameraOverlay?.replaceChildren();
+    if (dom.cameraHint) dom.cameraHint.hidden = false;
+    if (dom.cameraScanline) dom.cameraScanline.hidden = false;
+    if (dom.cameraRetry) dom.cameraRetry.hidden = true;
+  };
+
+  const openCamera = () => {
+    if (!dom.cameraDialog || !dom.cameraVideo || !dom.cameraCanvas) {
+      notify('当前浏览器不支持摄像头');
+      return;
+    }
+
+    stopCamera();
+    const wasBusy = state.busy;
+    state.token += 1;
+    setBusy(false);
+    if (wasBusy) clearResults();
+
+    if (!dom.cameraDialog.open) {
+      if (typeof dom.cameraDialog.showModal === 'function') dom.cameraDialog.showModal();
+      else dom.cameraDialog.setAttribute('open', '');
+    }
+
+    dom.cameraOverlay?.replaceChildren();
+    if (dom.cameraHint) dom.cameraHint.hidden = false;
+    if (dom.cameraScanline) dom.cameraScanline.hidden = false;
+    if (dom.cameraRetry) dom.cameraRetry.hidden = true;
+    setCameraStatus('正在打开摄像头…');
+
+    const controller = new AbortController();
+    cameraAbort = controller;
+
+    startCamera({
+      video: dom.cameraVideo,
+      canvas: dom.cameraCanvas,
+      decode,
+      signal: controller.signal,
+      onStatus: (kind, detail) => {
+        if (controller.signal.aborted) return;
+        if (kind === 'ready') {
+          setCameraStatus('把二维码对准取景框');
+          return;
+        }
+        if (kind === 'error') {
+          log(detail);
+          setCameraStatus(cameraError(detail), true);
+          if (dom.cameraRetry) dom.cameraRetry.hidden = false;
+          if (dom.cameraHint) dom.cameraHint.hidden = true;
+          if (dom.cameraScanline) dom.cameraScanline.hidden = true;
+        }
+      },
+      onResult: (result, frame) => {
+        if (controller.signal.aborted) return;
+
+        const items = [summarize(result)];
+        drawPreview(frame.canvas, frame.width, frame.height);
+        if (dom.dropIdle) dom.dropIdle.hidden = true;
+        if (dom.dropPreview) dom.dropPreview.hidden = false;
+        if (dom.previewName) dom.previewName.textContent = '摄像头截图';
+        if (dom.previewSize) dom.previewSize.textContent = `${frame.width} × ${frame.height}`;
+        drawOverlay(items, frame.width, frame.height);
+        setStatus('识别到 1 个码', 'success');
+        renderResults(items, frame.elapsedMs ?? 0);
+        setBusy(false);
+
+        if (dom.cameraOverlay) {
+          dom.cameraOverlay.setAttribute('viewBox', `0 0 ${frame.width} ${frame.height}`);
+          dom.cameraOverlay.innerHTML = overlayMarkup(items, frame.width, frame.height);
+        }
+        if (dom.cameraHint) dom.cameraHint.hidden = true;
+        if (dom.cameraScanline) dom.cameraScanline.hidden = true;
+        setCameraStatus('识别成功，正在返回结果…');
+        cameraSession = null;
+        cameraCloseTimer = setTimeout(closeCamera, 700);
+      },
+    })
+      .then((session) => {
+        if (controller.signal.aborted) {
+          session.stop();
+          return;
+        }
+        cameraSession = session;
+      })
+      .catch((error) => {
+        if (controller.signal.aborted) return;
+        log(error);
+        setCameraStatus(cameraError(error), true);
+        if (dom.cameraRetry) dom.cameraRetry.hidden = false;
+      });
   };
 
   const hasFiles = (event) => Array.from(event.dataTransfer?.types ?? []).includes('Files');
@@ -445,10 +563,13 @@ export function bindApp(dom, deps = {}) {
     });
     document.addEventListener('paste', onPaste);
 
-    dom.cameraBtn?.addEventListener('click', () => {
-      if (deps.openCamera) deps.openCamera();
-      else notify('摄像头模块还没加载');
+    dom.cameraBtn?.addEventListener('click', openCamera);
+    dom.cameraClose?.addEventListener('click', closeCamera);
+    dom.cameraRetry?.addEventListener('click', () => {
+      stopCamera();
+      openCamera();
     });
+    dom.cameraDialog?.addEventListener('close', stopCamera);
 
     dom.sampleBtn?.addEventListener('click', () => {
       if (deps.loadSample) deps.loadSample();
