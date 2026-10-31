@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>解码头 · 本地二维码解码</title>
+    <meta
+      name="description"
+      content="把二维码图片拖进来，或打开摄像头，直接读出内容。支持 QR、Data Matrix、Aztec、PDF417 与常见一维码，全程本地处理。"
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2317201b'/%3E%3Cpath d='M8 14V10a2 2 0 0 1 2-2h4M18 8h4a2 2 0 0 1 2 2v4M24 18v4a2 2 0 0 1-2 2h-4M14 24h-4a2 2 0 0 1-2-2v-4' stroke='%23f5f2ea' stroke-width='2' stroke-linecap='round' fill='none'/%3E%3Crect x='13' y='13' width='6' height='6' rx='1.5' fill='%236fce9f'/%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="page">
+      <header class="masthead">
+        <a class="brand" href="./" aria-label="解码头首页">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 32 32" fill="none">
+              <path d="M7 13V9a2 2 0 0 1 2-2h4" />
+              <path d="M19 7h4a2 2 0 0 1 2 2v4" />
+              <path d="M25 19v4a2 2 0 0 1-2 2h-4" />
+              <path d="M13 25H9a2 2 0 0 1-2-2v-4" />
+              <rect x="12.5" y="12.5" width="7" height="7" rx="2" fill="currentColor" stroke="none" />
+            </svg>
+          </span>
+          <span class="brand-copy">
+            <span class="brand-name">解码头</span>
+            <span class="brand-sub">QR / BARCODE DECODER</span>
+          </span>
+        </a>
+        <span class="privacy-pill">
+          <span class="privacy-dot" aria-hidden="true"></span>
+          本地解码 · 图片不上传
+        </span>
+      </header>
+
+      <main>
+        <section class="intro" aria-labelledby="page-title">
+          <div class="intro-copy">
+            <p class="eyebrow"><span></span> READ LOCAL, STAY LOCAL</p>
+            <h1 id="page-title">拖进来，<span class="accent">读</span>出来。</h1>
+            <p class="lede">
+              二维码、Data Matrix、Aztec、PDF417 和常见一维码，一张图片就够。
+              支持拖拽、粘贴截图和摄像头实时识别，所有处理都留在你的浏览器里。
+            </p>
+          </div>
+          <div class="stamp" aria-hidden="true">
+            <span class="stamp-top">100%</span>
+            <span class="stamp-mid">LOCAL</span>
+            <span class="stamp-bottom">NO UPLOAD</span>
+          </div>
+        </section>
+
+        <div class="workspace">
+          <section class="card intake" aria-labelledby="intake-title">
+            <h2 class="visually-hidden" id="intake-title">选择二维码图片</h2>
+            <div class="dropzone" id="dropzone">
+              <div class="drop-idle" id="drop-idle">
+                <svg class="scan-icon" viewBox="0 0 120 120" fill="none" aria-hidden="true">
+                  <path class="scan-corner" d="M14 43V27a13 13 0 0 1 13-13h16" />
+                  <path class="scan-corner" d="M77 14h16a13 13 0 0 1 13 13v16" />
+                  <path class="scan-corner" d="M106 77v16a13 13 0 0 1-13 13H77" />
+                  <path class="scan-corner" d="M43 106H27a13 13 0 0 1-13-13V77" />
+                  <rect
+                    x="38"
+                    y="38"
+                    width="44"
+                    height="44"
+                    rx="9"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    stroke-dasharray="4 6"
+                    opacity=".38"
+                  />
+                  <rect x="48" y="48" width="9" height="9" rx="2" fill="currentColor" />
+                  <rect x="63" y="48" width="9" height="9" rx="2" fill="currentColor" opacity=".55" />
+                  <rect x="48" y="63" width="9" height="9" rx="2" fill="currentColor" opacity=".55" />
+                  <rect x="63" y="63" width="9" height="9" rx="2" fill="currentColor" />
+                  <path class="scan-beam" d="M25 60h70" />
+                </svg>
+                <p class="drop-title">把二维码图片拖到这里</p>
+                <p class="drop-sub">或点击选择文件，也可以直接按 <kbd>⌘</kbd><kbd>V</kbd> 粘贴截图</p>
+                <div class="drop-actions">
+                  <button class="btn btn-primary" id="pick-btn" type="button">
+                    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                      <path d="M10 13V3m0 0L6.5 6.5M10 3l3.5 3.5" />
+                      <path d="M3 13v2.5A1.5 1.5 0 0 0 4.5 17h11a1.5 1.5 0 0 0 1.5-1.5V13" />
+                    </svg>
+                    选择图片
+                  </button>
+                  <button class="btn btn-ghost" id="camera-btn" type="button">
+                    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                      <path d="M3 7.5A1.5 1.5 0 0 1 4.5 6h1.7l1-1.6A1 1 0 0 1 8 4h4a1 1 0 0 1 .8.4l1 1.6h1.7A1.5 1.5 0 0 1 17 7.5v7A1.5 1.5 0 0 1 15.5 16h-11A1.5 1.5 0 0 1 3 14.5v-7Z" />
+                      <circle cx="10" cy="10.8" r="2.8" />
+                    </svg>
+                    摄像头扫码
+                  </button>
+                </div>
+                <div class="drop-hints">
+                  <span>JPG / PNG / WEBP / SVG</span>
+                  <span class="hint-sep" aria-hidden="true"></span>
+                  <button class="text-btn" id="sample-btn" type="button">没有图片？试试示例 →</button>
+                </div>
+              </div>
+
+              <div class="drop-preview" id="drop-preview" hidden>
+                <div class="preview-frame" id="preview-frame">
+                  <canvas id="preview-canvas"></canvas>
+                  <svg
+                    class="preview-overlay"
+                    id="preview-overlay"
+                    aria-hidden="true"
+                    preserveAspectRatio="xMidYMid meet"
+                  ></svg>
+                  <div class="frame-corners" aria-hidden="true">
+                    <span></span><span></span><span></span><span></span>
+                  </div>
+                  <div class="preview-status" id="preview-status">
+                    <span class="status-dot" aria-hidden="true"></span>
+                    <span id="preview-status-text">正在识别…</span>
+                  </div>
+                  <div class="scanline" id="preview-scanline" aria-hidden="true"></div>
+                </div>
+                <div class="preview-bar">
+                  <div class="preview-meta">
+                    <span id="preview-name">图片</span>
+                    <span class="meta-dot" aria-hidden="true"></span>
+                    <span id="preview-size">—</span>
+                  </div>
+                  <div class="preview-actions">
+                    <button class="btn btn-ghost btn-small" id="reset-btn" type="button">换一张</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="drop-veil" aria-hidden="true">
+                <span>松手，开始解码</span>
+              </div>
+            </div>
+            <p class="intake-note">
+              <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <rect x="3" y="7" width="10" height="7" rx="2" />
+                <path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2" />
+              </svg>
+              图片不会离开这台设备，也不会写入服务器日志。
+            </p>
+            <input id="file-input" type="file" accept="image/*" hidden />
+          </section>
+
+          <section class="card results" aria-labelledby="results-title">
+            <div class="results-head">
+              <div class="results-heading">
+                <h2 id="results-title">解码结果</h2>
+                <span class="count" id="result-count" hidden>0</span>
+              </div>
+              <span class="results-hint" id="results-hint">等待图片</span>
+            </div>
+
+            <div class="result-list" id="result-list">
+              <div class="empty-state" id="empty-state">
+                <div class="empty-art" aria-hidden="true">
+                  <svg viewBox="0 0 96 96" fill="none">
+                    <rect x="10" y="10" width="30" height="30" rx="6" stroke="currentColor" stroke-width="2" />
+                    <rect x="19" y="19" width="12" height="12" rx="2" fill="currentColor" />
+                    <rect x="56" y="10" width="30" height="30" rx="6" stroke="currentColor" stroke-width="2" />
+                    <rect x="65" y="19" width="12" height="12" rx="2" fill="currentColor" />
+                    <rect x="10" y="56" width="30" height="30" rx="6" stroke="currentColor" stroke-width="2" />
+                    <rect x="19" y="65" width="12" height="12" rx="2" fill="currentColor" />
+                    <path d="M56 56h12v12H56zM74 56h12v12H74zM56 74h12v12H56z" fill="currentColor" opacity=".28" />
+                    <path d="M74 74h12v12H74z" fill="currentColor" opacity=".55" />
+                    <path d="M48 4v88" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 7" opacity=".18" />
+                  </svg>
+                </div>
+                <h3>等待一个码</h3>
+                <p>识别成功后，内容会出现在这里。链接、Wi-Fi、名片会自动标注，方便直接复制或打开。</p>
+                <ul class="empty-tips">
+                  <li><span aria-hidden="true">✓</span> 支持一次识别多个码</li>
+                  <li><span aria-hidden="true">✓</span> 支持反色、旋转与模糊图片</li>
+                </ul>
+              </div>
+
+              <div class="result-loading" id="result-loading" hidden>
+                <div class="skeleton-card">
+                  <div class="skeleton-line short"></div>
+                  <div class="skeleton-line"></div>
+                  <div class="skeleton-line"></div>
+                  <div class="skeleton-line medium"></div>
+                </div>
+                <div class="skeleton-card">
+                  <div class="skeleton-line short"></div>
+                  <div class="skeleton-line medium"></div>
+                </div>
+              </div>
+
+              <div class="notice" id="result-notice" hidden role="status">
+                <span class="notice-icon" aria-hidden="true">!</span>
+                <div>
+                  <strong id="notice-title">没有找到可识别的码</strong>
+                  <p id="notice-text">试试更清晰、更完整的图片，或者换一个角度。</p>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <section class="history" id="history" hidden aria-labelledby="history-title">
+          <div class="history-head">
+            <h2 id="history-title">最近解码 <span>只保存在本机</span></h2>
+            <button class="text-btn" id="history-clear" type="button">清空记录</button>
+          </div>
+          <div class="history-list" id="history-list"></div>
+        </section>
+      </main>
+
+      <footer class="footer">
+        <p>
+          <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <rect x="3" y="7" width="10" height="7" rx="2" />
+            <path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2" />
+          </svg>
+          解码在浏览器本地完成 · 无网络请求 · 无上传
+        </p>
+        <p class="footer-meta">ZXing-C++ / WebAssembly</p>
+      </footer>
+    </div>
+
+    <dialog class="camera-dialog" id="camera-dialog" aria-labelledby="camera-title">
+      <div class="camera-panel">
+        <header class="camera-head">
+          <div>
+            <p class="camera-kicker">CAMERA</p>
+            <h2 id="camera-title">摄像头扫码</h2>
+          </div>
+          <button class="icon-btn" id="camera-close" type="button" aria-label="关闭摄像头">×</button>
+        </header>
+        <div class="camera-stage">
+          <video id="camera-video" playsinline muted></video>
+          <canvas id="camera-canvas" hidden></canvas>
+          <svg
+            class="camera-overlay"
+            id="camera-overlay"
+            aria-hidden="true"
+            preserveAspectRatio="xMidYMid meet"
+          ></svg>
+          <div class="camera-frame" aria-hidden="true">
+            <span></span><span></span><span></span><span></span>
+          </div>
+          <div class="camera-scanline" id="camera-scanline" aria-hidden="true"></div>
+          <div class="camera-hint" id="camera-hint">把二维码放进框内</div>
+        </div>
+        <footer class="camera-foot">
+          <span class="camera-status" id="camera-status" role="status">正在打开摄像头…</span>
+          <button class="btn btn-light btn-small" id="camera-retry" type="button" hidden>重试</button>
+        </footer>
+      </div>
+    </dialog>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "zxing-wasm/reader": "/node_modules/zxing-wasm/dist/es/reader/index.js"
+        }
+      }
+    </script>
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>

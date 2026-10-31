@@ -1,0 +1,17 @@
+{
+  "name": "qrscan",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "本地二维码解码网页：图片、截图与摄像头",
+  "scripts": {
+    "test": "node --test test/",
+    "serve": "node serve.mjs"
+  },
+  "dependencies": {
+    "zxing-wasm": "^3.1.6"
+  },
+  "devDependencies": {
+    "bwip-js": "^4.11.4"
+  }
+}
