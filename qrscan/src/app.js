@@ -1,8 +1,15 @@
-import { decodeImageData, summarize } from './decode.js';
+import { decodeImageData, formatLabel, summarize } from './decode.js';
 import { loadImageFile } from './image.js';
 import { accentFor, overlayMarkup } from './overlay.js';
 import { copyText } from './clipboard.js';
 import { mapCameraError, startCameraScan } from './camera.js';
+import {
+  addHistory,
+  clearHistory,
+  HISTORY_LIMIT,
+  loadHistory,
+  saveHistory,
+} from './history.js';
 
 const ICONS = {
   copy: '<svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="7" y="7" width="9" height="9" rx="2"/><path d="M13 7V5.5A1.5 1.5 0 0 0 11.5 4h-6A1.5 1.5 0 0 0 4 5.5v6A1.5 1.5 0 0 0 5.5 13H7"/></svg>',
@@ -89,6 +96,12 @@ function appendDetail(list, label, value) {
   list.append(row);
 }
 
+function shortText(text, max = 46) {
+  const flat = String(text).replace(/\s+/g, ' ').trim();
+  const chars = [...flat];
+  return chars.length > max ? `${chars.slice(0, max).join('')}…` : flat;
+}
+
 /**
  * 把页面上的 DOM 接到解码流程上。
  * 依赖都可以注入，方便在测试里替换掉图片加载、解码与剪贴板。
@@ -102,6 +115,8 @@ export function bindApp(dom, deps = {}) {
     warmup = true,
     startCamera = startCameraScan,
     cameraError = mapCameraError,
+    storage,
+    clock = () => Date.now(),
   } = deps;
 
   const state = {
@@ -109,6 +124,7 @@ export function bindApp(dom, deps = {}) {
     token: 0,
     results: [],
     meta: null,
+    history: loadHistory(storage),
   };
 
   let toastTimer;
@@ -123,6 +139,66 @@ export function bindApp(dom, deps = {}) {
     dom.toast.classList.add('is-visible');
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => dom.toast.classList.remove('is-visible'), 2400);
+  };
+
+  const formatHistoryTime = (at) => {
+    if (!at) return '';
+    const date = new Date(at);
+    if (Number.isNaN(date.getTime())) return '';
+    const now = new Date(clock());
+    const time = new Intl.DateTimeFormat('zh-CN', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    }).format(date);
+    if (date.toDateString() === now.toDateString()) return time;
+    const day = new Intl.DateTimeFormat('zh-CN', { month: '2-digit', day: '2-digit' }).format(date);
+    return `${day} ${time}`;
+  };
+
+  const renderHistory = () => {
+    if (!dom.historySection || !dom.historyList) return;
+    dom.historySection.hidden = state.history.length === 0;
+    dom.historyList.replaceChildren();
+
+    for (const entry of state.history) {
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'history-chip';
+      chip.title = entry.text;
+      chip.append(
+        element(
+          'span',
+          'h-format',
+          `${entry.format ? formatLabel(entry.format) : '条码'} · ${formatHistoryTime(entry.at)}`,
+        ),
+        element('span', 'h-text', shortText(entry.text)),
+      );
+      chip.addEventListener('click', async () => {
+        try {
+          await copy(entry.text);
+          notify('已复制历史内容');
+        } catch (error) {
+          log(error);
+          notify('复制失败，请手动选择文本');
+        }
+      });
+      dom.historyList.append(chip);
+    }
+  };
+
+  const remember = (items) => {
+    const usable = items.filter((item) => item.text);
+    if (!usable.length) return;
+
+    const at = clock();
+    let list = state.history;
+    for (const item of usable) {
+      list = addHistory(list, { text: item.text, format: item.format, at }, HISTORY_LIMIT);
+    }
+    state.history = list;
+    saveHistory(list, storage);
+    renderHistory();
   };
 
   const setStatus = (text, stateName = '') => {
@@ -360,6 +436,7 @@ export function bindApp(dom, deps = {}) {
         setStatus('没有找到可识别的码', 'error');
       }
       renderResults(items, elapsedMs);
+      if (items.length) remember(items);
     } catch (error) {
       if (token !== state.token) return;
       log(error);
@@ -454,6 +531,7 @@ export function bindApp(dom, deps = {}) {
         drawOverlay(items, frame.width, frame.height);
         setStatus('识别到 1 个码', 'success');
         renderResults(items, frame.elapsedMs ?? 0);
+        remember(items);
         setBusy(false);
 
         if (dom.cameraOverlay) {
@@ -532,6 +610,7 @@ export function bindApp(dom, deps = {}) {
   const init = () => {
     clearResults();
     clearOverlay();
+    renderHistory();
 
     dom.pickBtn?.addEventListener('click', pickFile);
     dom.resetBtn?.addEventListener('click', pickFile);
@@ -570,6 +649,13 @@ export function bindApp(dom, deps = {}) {
       openCamera();
     });
     dom.cameraDialog?.addEventListener('close', stopCamera);
+
+    dom.historyClear?.addEventListener('click', () => {
+      state.history = [];
+      clearHistory(storage);
+      renderHistory();
+      notify('已清空历史记录');
+    });
 
     dom.sampleBtn?.addEventListener('click', () => {
       if (deps.loadSample) deps.loadSample();
