@@ -28,7 +28,16 @@ export function startServer({ root = process.cwd(), port = 4321, host } = {}) {
   const rootDir = resolve(root);
 
   const server = createServer((req, res) => {
-    const pathname = decodeURIComponent(new URL(req.url, 'http://localhost').pathname);
+    let pathname;
+    try {
+      pathname = decodeURIComponent(new URL(req.url, 'http://localhost').pathname);
+    } catch {
+      // 畸形百分号编码会让 decodeURIComponent 抛错，别让它升级成进程级异常
+      res.writeHead(400, { 'Cache-Control': 'no-store' });
+      res.end('400');
+      return;
+    }
+
     const file = resolve(rootDir, '.' + (pathname.endsWith('/') ? `${pathname}index.html` : pathname));
 
     // 目录穿越防护

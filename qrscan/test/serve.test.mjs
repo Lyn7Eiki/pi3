@@ -52,3 +52,14 @@ test('S3 目录回落到 index.html，缺失路径 404，越界路径 403', asyn
     assert.equal(escape.status, 403);
   });
 });
+
+test('S4 畸形 URL 返回 400，服务仍然存活', async () => {
+  await withServer(async (base) => {
+    const bad = await fetch(base + '/%E0%A4%A');
+    assert.equal(bad.status, 400);
+    assert.match(bad.headers.get('cache-control') ?? '', /no-store/);
+
+    const ok = await fetch(base + '/');
+    assert.equal(ok.status, 200);
+  });
+});
