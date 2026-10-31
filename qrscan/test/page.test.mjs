@@ -40,3 +40,9 @@ test('P3 交互按钮都声明了 type，避免在表单语义下误提交', () 
     assert.match(tag, /type="button"/, tag);
   }
 });
+
+test('P4 示例图存在且是 PNG', () => {
+  const png = readFileSync(new URL('../assets/sample.png', import.meta.url));
+  assert.deepEqual([...png.subarray(0, 8)], [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+  assert.ok(png.length > 5000, `示例图只有 ${png.length} 字节`);
+});

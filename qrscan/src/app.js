@@ -560,6 +560,22 @@ export function bindApp(dom, deps = {}) {
       });
   };
 
+  const loadSample = async () => {
+    try {
+      const response = await fetch('./assets/sample.png', { cache: 'no-store' });
+      if (!response.ok) throw new Error(`示例图片加载失败（${response.status}）`);
+      const blob = await response.blob();
+      const file =
+        typeof File === 'function'
+          ? new File([blob], '示例：二维码 + Data Matrix.png', { type: blob.type || 'image/png' })
+          : blob;
+      await handleFile(file);
+    } catch (error) {
+      log(error);
+      notify('示例图片加载失败');
+    }
+  };
+
   const hasFiles = (event) => Array.from(event.dataTransfer?.types ?? []).includes('Files');
 
   const isImage = (file) =>
@@ -657,10 +673,7 @@ export function bindApp(dom, deps = {}) {
       notify('已清空历史记录');
     });
 
-    dom.sampleBtn?.addEventListener('click', () => {
-      if (deps.loadSample) deps.loadSample();
-      else notify('示例图片还没准备好');
-    });
+    dom.sampleBtn?.addEventListener('click', loadSample);
 
     if (warmup && typeof ImageData !== 'undefined') {
       const run = () => {
