@@ -807,6 +807,12 @@ kbd {
   background: var(--line);
 }
 
+.result-items {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
 .empty-state {
   display: flex;
   flex: 1;

@@ -1,1 +1,40 @@
-// 页面入口。交互逻辑在后续提交里接入。
+import { bindApp } from './app.js';
+
+const app = bindApp({
+  dropzone: document.getElementById('dropzone'),
+  dropIdle: document.getElementById('drop-idle'),
+  dropPreview: document.getElementById('drop-preview'),
+  previewFrame: document.getElementById('preview-frame'),
+  previewCanvas: document.getElementById('preview-canvas'),
+  previewOverlay: document.getElementById('preview-overlay'),
+  previewStatus: document.getElementById('preview-status'),
+  previewStatusText: document.getElementById('preview-status-text'),
+  previewName: document.getElementById('preview-name'),
+  previewSize: document.getElementById('preview-size'),
+  resetBtn: document.getElementById('reset-btn'),
+  fileInput: document.getElementById('file-input'),
+  pickBtn: document.getElementById('pick-btn'),
+  cameraBtn: document.getElementById('camera-btn'),
+  sampleBtn: document.getElementById('sample-btn'),
+  resultItems: document.getElementById('result-items'),
+  emptyState: document.getElementById('empty-state'),
+  resultLoading: document.getElementById('result-loading'),
+  resultNotice: document.getElementById('result-notice'),
+  noticeTitle: document.getElementById('notice-title'),
+  noticeText: document.getElementById('notice-text'),
+  resultCount: document.getElementById('result-count'),
+  resultsHint: document.getElementById('results-hint'),
+  historySection: document.getElementById('history'),
+  historyList: document.getElementById('history-list'),
+  historyClear: document.getElementById('history-clear'),
+  cameraDialog: document.getElementById('camera-dialog'),
+  cameraVideo: document.getElementById('camera-video'),
+  cameraCanvas: document.getElementById('camera-canvas'),
+  cameraOverlay: document.getElementById('camera-overlay'),
+  cameraStatus: document.getElementById('camera-status'),
+  cameraClose: document.getElementById('camera-close'),
+  cameraRetry: document.getElementById('camera-retry'),
+  toast: document.getElementById('toast'),
+});
+
+app.init();
