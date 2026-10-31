@@ -4,7 +4,7 @@ import { accentFor, overlayMarkup } from './overlay.js';
 import { copyText } from './clipboard.js';
 import { mapCameraError, startCameraScan } from './camera.js';
 import {
-  addHistory,
+  addManyHistory,
   clearHistory,
   HISTORY_LIMIT,
   loadHistory,
@@ -192,12 +192,9 @@ export function bindApp(dom, deps = {}) {
     if (!usable.length) return;
 
     const at = clock();
-    let list = state.history;
-    for (const item of usable) {
-      list = addHistory(list, { text: item.text, format: item.format, at }, HISTORY_LIMIT);
-    }
-    state.history = list;
-    saveHistory(list, storage);
+    const entries = usable.map((item) => ({ text: item.text, format: item.format, at }));
+    state.history = addManyHistory(state.history, entries, HISTORY_LIMIT);
+    saveHistory(state.history, storage);
     renderHistory();
   };
 

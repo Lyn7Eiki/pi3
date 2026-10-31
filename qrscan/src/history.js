@@ -50,6 +50,16 @@ export function addHistory(list, entry, limit = HISTORY_LIMIT) {
   ].slice(0, limit);
 }
 
+/** 批量加入：结果里先出现的码，在历史里也排在前面。 */
+export function addManyHistory(list, entries, limit = HISTORY_LIMIT) {
+  let next = sanitize(list, limit);
+  const clean = sanitize(entries, limit);
+  for (const entry of [...clean].reverse()) {
+    next = addHistory(next, entry, limit);
+  }
+  return next;
+}
+
 export function saveHistory(list, storage) {
   try {
     (storage ?? globalThis.localStorage)?.setItem(HISTORY_KEY, JSON.stringify(sanitize(list, HISTORY_LIMIT)));

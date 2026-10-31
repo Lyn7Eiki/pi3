@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   addHistory,
+  addManyHistory,
   clearHistory,
   HISTORY_KEY,
   HISTORY_LIMIT,
@@ -77,4 +78,21 @@ test('H5 空文本不进历史，重复文本只留最新', () => {
   list = addHistory(list, entry('', 2));
   list = addHistory(list, entry('same', 3));
   assert.deepEqual(list, [entry('same', 3)]);
+});
+
+test('H6 批量加入保持结果顺序，并在批次内去重', () => {
+  const list = addManyHistory(
+    [entry('old', 0)],
+    [entry('a', 1), entry('b', 2), entry('c', 3)],
+  );
+  assert.deepEqual(
+    list.map((item) => item.text),
+    ['a', 'b', 'c', 'old'],
+  );
+
+  const deduped = addManyHistory([], [entry('x', 1), entry('y', 2), entry('x', 3)]);
+  assert.deepEqual(
+    deduped.map((item) => item.text),
+    ['x', 'y'],
+  );
 });
