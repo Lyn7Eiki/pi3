@@ -79,12 +79,12 @@ function setButtonLabel(button, label) {
   if (span) span.textContent = label;
 }
 
-function makeLink(className, icon, label, href, kind) {
+function makeLink(className, icon, label, href) {
   const link = document.createElement('a');
   link.className = className;
   link.href = href;
   link.rel = 'noopener noreferrer';
-  if (kind === 'url') link.target = '_blank';
+  link.target = '_blank';
   link.innerHTML = (ICONS[icon] ?? '') + '<span></span>';
   link.querySelector('span').textContent = label;
   return link;
@@ -306,7 +306,6 @@ export function bindApp(dom, deps = {}) {
           'open',
           ACTION_LABELS[item.kind] ?? '打开',
           item.href,
-          item.kind,
         ),
       );
     }
@@ -466,6 +465,7 @@ export function bindApp(dom, deps = {}) {
     stopCamera();
     if (dom.cameraDialog?.open) dom.cameraDialog.close();
     dom.cameraOverlay?.replaceChildren();
+    if (dom.cameraStage) dom.cameraStage.style.aspectRatio = '';
     if (dom.cameraHint) dom.cameraHint.hidden = false;
     if (dom.cameraScanline) dom.cameraScanline.hidden = false;
     if (dom.cameraRetry) dom.cameraRetry.hidden = true;
@@ -489,6 +489,7 @@ export function bindApp(dom, deps = {}) {
     }
 
     dom.cameraOverlay?.replaceChildren();
+    if (dom.cameraStage) dom.cameraStage.style.aspectRatio = '';
     if (dom.cameraHint) dom.cameraHint.hidden = false;
     if (dom.cameraScanline) dom.cameraScanline.hidden = false;
     if (dom.cameraRetry) dom.cameraRetry.hidden = true;
@@ -506,6 +507,9 @@ export function bindApp(dom, deps = {}) {
         if (controller.signal.aborted) return;
         if (kind === 'ready') {
           setCameraStatus('把二维码对准取景框');
+          if (dom.cameraStage && detail?.width && detail?.height) {
+            dom.cameraStage.style.aspectRatio = `${detail.width} / ${detail.height}`;
+          }
           return;
         }
         if (kind === 'error') {

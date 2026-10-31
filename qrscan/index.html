@@ -83,7 +83,10 @@
                   <path class="scan-beam" d="M25 60h70" />
                 </svg>
                 <p class="drop-title">把二维码图片拖到这里</p>
-                <p class="drop-sub">或点击选择文件，也可以直接按 <kbd>⌘</kbd><kbd>V</kbd> 粘贴截图</p>
+                <p class="drop-sub">
+                  <span class="desktop-hint">或点击选择文件，也可以直接按 <kbd>⌘</kbd><kbd>V</kbd> 粘贴截图</span>
+                  <span class="mobile-hint">或点击选择文件，从相册里挑一张</span>
+                </p>
                 <div class="drop-actions">
                   <button class="btn btn-primary" id="pick-btn" type="button">
                     <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
@@ -239,7 +242,7 @@
           </div>
           <button class="icon-btn" id="camera-close" type="button" aria-label="关闭摄像头">×</button>
         </header>
-        <div class="camera-stage">
+        <div class="camera-stage" id="camera-stage">
           <video id="camera-video" playsinline muted></video>
           <canvas id="camera-canvas" hidden></canvas>
           <svg

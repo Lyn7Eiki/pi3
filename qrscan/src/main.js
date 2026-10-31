@@ -31,6 +31,7 @@ const app = bindApp({
   cameraVideo: document.getElementById('camera-video'),
   cameraCanvas: document.getElementById('camera-canvas'),
   cameraOverlay: document.getElementById('camera-overlay'),
+  cameraStage: document.getElementById('camera-stage'),
   cameraStatus: document.getElementById('camera-status'),
   cameraHint: document.getElementById('camera-hint'),
   cameraScanline: document.getElementById('camera-scanline'),

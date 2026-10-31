@@ -145,7 +145,7 @@ export async function startCameraScan({
     if (!stopped) timer = setTimeout(tick, interval);
   };
 
-  onStatus('ready');
+  onStatus('ready', { width: video.videoWidth, height: video.videoHeight });
   tick();
   return { stop };
 }

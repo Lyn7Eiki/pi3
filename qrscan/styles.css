@@ -66,6 +66,7 @@ body::before {
     linear-gradient(rgba(23, 32, 27, 0.038) 1px, transparent 1px),
     linear-gradient(90deg, rgba(23, 32, 27, 0.038) 1px, transparent 1px);
   background-size: 26px 26px;
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, transparent 78%);
   mask-image: linear-gradient(to bottom, #000 0%, transparent 78%);
 }
 
@@ -172,6 +173,7 @@ button {
   color: var(--ink-soft);
   font-size: 0.75rem;
   letter-spacing: 0.02em;
+  -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
 }
 
@@ -295,6 +297,7 @@ button {
   border-radius: var(--radius-xl);
   background: rgba(255, 253, 247, 0.84);
   box-shadow: var(--shadow);
+  -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
 }
 
@@ -412,6 +415,7 @@ kbd {
   font-size: 0.88rem;
   font-weight: 620;
   text-decoration: none;
+  white-space: nowrap;
   cursor: pointer;
   transition:
     transform 0.16s ease,
@@ -502,6 +506,10 @@ kbd {
   width: 1px;
   height: 11px;
   background: var(--line);
+}
+
+.mobile-hint {
+  display: none;
 }
 
 .text-btn {
@@ -663,6 +671,7 @@ kbd {
   color: #f4f1e8;
   font-size: 0.68rem;
   letter-spacing: 0.02em;
+  -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
 }
 
@@ -712,22 +721,36 @@ kbd {
 
 .preview-meta {
   display: flex;
+  flex: 1;
   align-items: center;
   gap: 8px;
   min-width: 0;
+  overflow: hidden;
   color: var(--muted);
   font-family: var(--mono);
   font-size: 0.67rem;
+  white-space: nowrap;
 }
 
 #preview-name {
+  flex: 0 1 auto;
+  min-width: 0;
   max-width: 220px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+#preview-size {
+  flex: none;
+}
+
+.preview-actions {
+  flex: none;
+}
+
 .meta-dot {
+  flex: none;
   width: 3px;
   height: 3px;
   border-radius: 50%;
@@ -951,12 +974,14 @@ kbd {
 }
 
 .result-text.is-clamped {
+  -webkit-mask-image: linear-gradient(to bottom, #000 62%, transparent 100%);
   mask-image: linear-gradient(to bottom, #000 62%, transparent 100%);
 }
 
 .result-card.is-expanded .result-text {
   max-height: 340px;
   overflow-y: auto;
+  -webkit-mask-image: none;
   mask-image: none;
 }
 
@@ -1219,6 +1244,7 @@ kbd {
 
 .camera-dialog::backdrop {
   background: rgba(12, 18, 15, 0.58);
+  -webkit-backdrop-filter: blur(7px);
   backdrop-filter: blur(7px);
 }
 
@@ -1275,6 +1301,7 @@ kbd {
 .camera-stage {
   position: relative;
   aspect-ratio: 4 / 3;
+  max-height: 62vh;
   margin: 0 20px;
   overflow: hidden;
   border-radius: 17px;
@@ -1366,6 +1393,7 @@ kbd {
   font-size: 0.67rem;
   white-space: nowrap;
   transform: translateX(-50%);
+  -webkit-backdrop-filter: blur(6px);
   backdrop-filter: blur(6px);
 }
 
@@ -1407,6 +1435,7 @@ kbd {
   transition:
     opacity 0.22s ease,
     transform 0.22s ease;
+  -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
 }
 
@@ -1588,6 +1617,14 @@ kbd {
   .drop-hints {
     gap: 8px;
     font-size: 0.58rem;
+  }
+
+  .desktop-hint {
+    display: none;
+  }
+
+  .mobile-hint {
+    display: inline;
   }
 
   .preview-frame {
