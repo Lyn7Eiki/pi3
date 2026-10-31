@@ -266,6 +266,8 @@
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
+    <!-- jsQR 只在 zxing 读不出空内容二维码时兜底；经典脚本挂到 globalThis -->
+    <script src="./node_modules/jsqr/dist/jsQR.js"></script>
     <script type="importmap">
       {
         "imports": {

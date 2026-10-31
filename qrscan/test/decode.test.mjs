@@ -1,5 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import jsQR from 'jsqr';
+import qrcode from 'qrcode-generator';
 import {
   classifyContent,
   decodeImageData,
@@ -10,6 +12,23 @@ import {
 import { encodeMatrix, invert, rasterize, rotate90 } from './support/rasterize.mjs';
 
 const QR_FORMATS = ['QRCode'];
+
+if (qrcode.stringToBytesFuncs?.['UTF-8']) {
+  qrcode.stringToBytes = qrcode.stringToBytesFuncs['UTF-8'];
+}
+
+/** qrcode-generator 允许零长度内容，正好用来造空内容二维码。 */
+function emptyQrMatrix() {
+  const qr = qrcode(0, 'M');
+  qr.addData('');
+  qr.make();
+  const size = qr.getModuleCount();
+  const pixs = [];
+  for (let row = 0; row < size; row += 1) {
+    for (let col = 0; col < size; col += 1) pixs.push(qr.isDark(row, col));
+  }
+  return { width: size, height: size, pixs };
+}
 
 test('D1 二维码往返：中文、链接与长文本', async () => {
   for (const text of ['你好，世界', 'https://example.com/a?b=1&c=2', 'A'.repeat(180)]) {
@@ -112,4 +131,21 @@ test('D9 summarize 把结果整理成页面结构', () => {
   assert.equal(got.version, '2');
   assert.equal(got.ecLevel, 'Q');
   assert.equal(got.position.topLeft.x, 1);
+});
+
+test('D10 空内容二维码由 jsQR 兜底', async () => {
+  const image = rasterize(emptyQrMatrix());
+  const { results } = await decodeImageData(image, { formats: QR_FORMATS, jsQR });
+
+  assert.equal(results.length, 1);
+  assert.equal(results[0].format, 'QRCode');
+  assert.equal(results[0].text, '');
+  assert.equal(results[0].isValid, true);
+  assert.ok(results[0].position?.topLeft, '应带上 jsQR 的检测框');
+});
+
+test('D11 只找 Data Matrix 时不会用 jsQR 误报二维码', async () => {
+  const image = rasterize(emptyQrMatrix());
+  const { results } = await decodeImageData(image, { formats: ['DataMatrix'], jsQR });
+  assert.equal(results.length, 0);
 });

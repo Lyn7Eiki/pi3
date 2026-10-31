@@ -25,6 +25,47 @@ export const IMAGE_FORMATS = [];
 export const CAMERA_FORMATS = ['QRCode', 'DataMatrix', 'Aztec', 'PDF417', 'MaxiCode'];
 
 const CLOCK = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
+const encoder = new TextEncoder();
+
+/**
+ * jsQR 只认二维码，但它能读出 zxing 不返回的空 payload。
+ * 把结果整理成 zxing ReadResult 的形状，后面的 summarize 就能共用。
+ */
+function readWithJsQr(imageData, jsQR) {
+  if (typeof jsQR !== 'function') return null;
+
+  let found;
+  try {
+    found = jsQR(imageData.data, imageData.width, imageData.height, {
+      inversionAttempts: 'attemptBoth',
+    });
+  } catch {
+    return null;
+  }
+  if (!found) return null;
+
+  const text = typeof found.data === 'string' ? found.data : '';
+  const location = found.location;
+  return {
+    isValid: true,
+    text,
+    format: 'QRCode',
+    bytes: encoder.encode(text),
+    extra: '',
+    rotation: 0,
+    isInverted: false,
+    isMirrored: false,
+    contentType: 'Text',
+    position: location
+      ? {
+          topLeft: location.topLeftCorner,
+          topRight: location.topRightCorner,
+          bottomRight: location.bottomRightCorner,
+          bottomLeft: location.bottomLeftCorner,
+        }
+      : null,
+  };
+}
 
 /**
  * 解码一张 ImageData。
@@ -32,12 +73,12 @@ const CLOCK = () => (typeof performance !== 'undefined' ? performance.now() : Da
  * 用来救低对比度或有点糊的照片；摄像头走 deep=false，只跑一轮。
  *
  * @param {{data: Uint8ClampedArray, width: number, height: number}} imageData
- * @param {{formats?: string[], deep?: boolean, maxSymbols?: number}} [options]
+ * @param {{formats?: string[], deep?: boolean, maxSymbols?: number, jsQR?: Function}} [options]
  * @returns {Promise<{results: any[], elapsedMs: number}>}
  */
 export async function decodeImageData(
   imageData,
-  { formats = IMAGE_FORMATS, deep = true, maxSymbols = 8 } = {},
+  { formats = IMAGE_FORMATS, deep = true, maxSymbols = 8, jsQR = globalThis.jsQR } = {},
 ) {
   if (!imageData || !imageData.data || !imageData.width || !imageData.height) {
     throw new TypeError('decodeImageData 需要一份有效的 ImageData');
@@ -67,6 +108,12 @@ export async function decodeImageData(
       lastError = error;
     }
     if (results.length) break;
+  }
+
+  // zxing 不返回空 payload；只在图片模式、且确实找二维码时补一次 jsQR。
+  if (!results.length && deep && (formats.length === 0 || formats.includes('QRCode'))) {
+    const fallback = readWithJsQr(imageData, jsQR);
+    if (fallback) results = [fallback];
   }
 
   if (!results.length && lastError) throw lastError;
@@ -171,7 +218,6 @@ export function parseExtra(extra) {
   }
 }
 
-const encoder = new TextEncoder();
 
 /**
  * 把 zxing 的 ReadResult 整理成页面直接能用的结构。
